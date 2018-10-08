@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false" debug="false">
+
+ 	<!-- log format -->
+    <property name="log_format" value="%date{yyyy-MM-dd HH:mm:ss} [%thread] %level %class{15}[%line] - %message%n"/>
+	<property name="appname" value="file_server"></property>
+	<property name="root_level" value="INFO"></property>
+
+	<!--输出到控制台 -->
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${log_format}</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
+	<!--按天生成日志 -->
+	<appender name="logFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>/home/tyjw/app/logs/${appname}.log</file>
+		<encoder>
+			<pattern>${log_format}</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>/home/tyjw/app/logs/history/${appname}_%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+	</appender>
+	
+	<!--错误日志 -->
+	<appender name="logFile_error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+   	 	</filter>
+		<file>/home/tyjw/app/logs/${appname}_error.log</file>
+		<encoder>
+			<pattern>${log_format}</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>/home/tyjw/app/logs/history/${appname}_%d{yyyy-MM-dd}_error.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<root level="${root_level}">
+		<appender-ref ref="console" />
+		<appender-ref ref="logFile" />
+		<appender-ref ref="logFile_error" />
+	</root>
+	
+</configuration>

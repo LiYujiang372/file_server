@@ -8,6 +8,7 @@ import com.demo.file_server.hanlder.FileHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -50,6 +51,11 @@ public class TcpServer {
 	 */
 	public void start() throws InterruptedException {
 		init();
-		bootstrap.bind().sync().channel().closeFuture().sync();
+		logger.info("启动服务器中...");
+		ChannelFuture future = bootstrap.bind().sync();
+		if (future.isSuccess()) {
+			logger.info("服务器启动成功!");
+			future.channel().closeFuture().sync();
+		}
 	}
 }
