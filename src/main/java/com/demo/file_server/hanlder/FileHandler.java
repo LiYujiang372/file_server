@@ -106,7 +106,7 @@ public class FileHandler extends SimpleChannelInboundHandler<ByteBuf> {
 		byte[] bytes = new byte[dataLengh];
 		buf.readBytes(bytes);
 		try {
-			fileWriter.writeFileData(id, bytes);
+			fileWriter.writeFile(id, bytes);
 			logger.info("成功将文件数据写入!");
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -2,9 +2,11 @@ package com.demo.file_server.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.demo.file_server.hanlder.FileHandler;
+import com.demo.file_server.hanlder.FirstHandler;
+import com.demo.file_server.hanlder.SecondHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -28,6 +30,12 @@ public class TcpServer {
 	
 	private static Logger logger = LoggerFactory.getLogger(TcpServer.class);
 	
+	@Autowired
+	private FirstHandler firstHandler;
+	
+	@Autowired
+	private SecondHandler secondHandler;
+	
 	private final static int SERVER_PORT = 2345;
 	
 	/**
@@ -40,7 +48,8 @@ public class TcpServer {
 			.childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					ch.pipeline().addLast(new FileHandler());
+					ch.pipeline().addLast(firstHandler);
+					ch.pipeline().addLast(secondHandler);
 				}
 			});
 	}
