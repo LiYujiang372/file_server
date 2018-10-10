@@ -1,12 +1,17 @@
 package com.demo.file_server.server;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.demo.file_server.hanlder.FirstHandler;
-import com.demo.file_server.hanlder.SecondHandler;
+import com.demo.file_server.context.AppBeans;
+import com.demo.file_server.context.AppConfigs;
+import com.demo.file_server.server.handler.out.ProcessHandler;
+import com.demo.file_server.server.hanlder.in.FileFrameDecoder;
+import com.demo.file_server.server.hanlder.in.FileSaveHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -26,40 +31,47 @@ public class TcpServer {
 	
 	private ServerBootstrap bootstrap = new ServerBootstrap();
 
-	private EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
+	private EventLoopGroup parentGroup = new NioEventLoopGroup(1);
+	
+	private EventLoopGroup childGroup = new NioEventLoopGroup(AppConfigs.CORE_COUNT * 2);
 	
 	private static Logger logger = LoggerFactory.getLogger(TcpServer.class);
 	
 	@Autowired
-	private FirstHandler firstHandler;
+	private FileFrameDecoder fileFrameDecoder;
 	
 	@Autowired
-	private SecondHandler secondHandler;
+	private FileSaveHandler fileSaveHandler;
+	
+	@Autowired
+	private ProcessHandler processHandler;
 	
 	private final static int SERVER_PORT = 2345;
 	
 	/**
 	 * 初始化服务器
 	 */
+	@PostConstruct
 	public void init() {
-		bootstrap.group(group)
+		bootstrap.group(parentGroup, childGroup)
 			.channel(NioServerSocketChannel.class)
 			.localAddress(SERVER_PORT)
 			.childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					ch.pipeline().addLast(firstHandler);
-					ch.pipeline().addLast(secondHandler);
+					ch.pipeline().addLast(processHandler);
+					ch.pipeline().addLast(AppBeans.tcpFrameDecoder());
+					ch.pipeline().addLast(fileFrameDecoder);
+					ch.pipeline().addLast(fileSaveHandler);
 				}
 			});
 	}
 	
 	/**
 	 * 启动服务器
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	public void start() throws InterruptedException {
-		init();
 		logger.info("启动服务器中...");
 		ChannelFuture future = bootstrap.bind().sync();
 		if (future.isSuccess()) {
