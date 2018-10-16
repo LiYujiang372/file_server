@@ -5,11 +5,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.demo.file_server.pojo.FileInfo;
+import com.demo.file_server.dao.entity.FileStorage;
 
 @Component
 public class FileInfoCach {
 	
-	public static Map<Long, FileInfo> infoMap = new ConcurrentHashMap<>();
+	public static Map<Long, FileStorage> infoMap = new ConcurrentHashMap<>();
 	
 }

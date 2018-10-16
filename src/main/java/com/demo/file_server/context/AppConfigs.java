@@ -6,5 +6,5 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class AppConfigs {
 	
 	public static final int CORE_COUNT = Runtime.getRuntime().availableProcessors();
-
+	
 }

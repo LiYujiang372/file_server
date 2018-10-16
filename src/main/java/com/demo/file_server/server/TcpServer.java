@@ -7,16 +7,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.demo.file_server.context.AppBeans;
 import com.demo.file_server.context.AppConfigs;
-import com.demo.file_server.server.handler.out.ProcessHandler;
-import com.demo.file_server.server.hanlder.in.FileFrameDecoder;
-import com.demo.file_server.server.hanlder.in.FileSaveHandler;
+import com.demo.file_server.server.hanlder.in.oauth.OauthHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -31,21 +29,18 @@ public class TcpServer {
 	
 	private ServerBootstrap bootstrap = new ServerBootstrap();
 
-	private EventLoopGroup parentGroup = new NioEventLoopGroup(1);
+	private EventLoopGroup parentGroup = new NioEventLoopGroup();
 	
 	private EventLoopGroup childGroup = new NioEventLoopGroup(AppConfigs.CORE_COUNT * 2);
 	
 	private static Logger logger = LoggerFactory.getLogger(TcpServer.class);
 	
 	@Autowired
-	private FileFrameDecoder fileFrameDecoder;
+	private OauthHandler oauthHandler;
 	
-	@Autowired
-	private FileSaveHandler fileSaveHandler;
-	
-	@Autowired
-	private ProcessHandler processHandler;
-	
+	/**
+	 * 服务器绑定的端口号
+	 */
 	private final static int SERVER_PORT = 2345;
 	
 	/**
@@ -59,12 +54,11 @@ public class TcpServer {
 			.childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					ch.pipeline().addLast(processHandler);
-					ch.pipeline().addLast(AppBeans.tcpFrameDecoder());
-					ch.pipeline().addLast(fileFrameDecoder);
-					ch.pipeline().addLast(fileSaveHandler);
+					ch.pipeline().addLast(oauthHandler);
 				}
 			});
+		//禁用nagle算法
+		bootstrap.option(ChannelOption.TCP_NODELAY, true);
 	}
 	
 	/**
@@ -77,6 +71,8 @@ public class TcpServer {
 		if (future.isSuccess()) {
 			logger.info("服务器启动成功!");
 			future.channel().closeFuture().sync();
+		}else {
+			logger.error("服务器启动失败,原因:[{}]", future.cause().getMessage(), future.cause());
 		}
 	}
 }

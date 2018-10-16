@@ -10,11 +10,12 @@ public class AppBeans {
 	public static TcpFrameDecoder tcpFrameDecoder() {
 		/*
 		 * ByteOrder.BIG_ENDIAN 表示字节序使用大端
-		 * 0 4   表示长度字段位置 0,4
-		 * -4 表示开始计算长度的位置 -4 表示最开始位置
-		 * 0 表示除去字段为0,保留完整原始字段
+		 * 9 lengthFieldOffset  长度字段开始位置的索引
+		 * 4 lengthFieldLength 	长度字段字节长度
+		 * 0 lengthAdjustment 计算长度的位置调整量
+		 * 0 initialBytesToStrip 表示除去字段为0,保留完整原始字段
 		 */
-		return new TcpFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 0, 4, -4, 0, true);
+		return new TcpFrameDecoder(ByteOrder.BIG_ENDIAN, Integer.MAX_VALUE, 9, 4, 0, 0, true);
 	}
 	
 }

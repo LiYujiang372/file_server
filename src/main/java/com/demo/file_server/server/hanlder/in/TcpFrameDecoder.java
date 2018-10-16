@@ -1,6 +1,10 @@
 package com.demo.file_server.server.hanlder.in;
 
 import java.nio.ByteOrder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -12,7 +16,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  */
 public class TcpFrameDecoder extends LengthFieldBasedFrameDecoder {
 	
-	private static final int HEAD_SIZE = 21;
+	private static Logger logger = LoggerFactory.getLogger(TcpFrameDecoder.class);
 	
 	public TcpFrameDecoder(ByteOrder byteOrder, int maxFrameLength, int lengthFieldOffset, int lengthFieldLength,
 			int lengthAdjustment, int initialBytesToStrip, boolean failFast) {
@@ -24,14 +28,8 @@ public class TcpFrameDecoder extends LengthFieldBasedFrameDecoder {
 	 */
 	@Override
 	protected Object decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
-		ByteBuf newBuf = (ByteBuf) super.decode(ctx, buf);
-		if (newBuf == null) {
-			return null;
-		}
-		if (newBuf.readableBytes() < HEAD_SIZE) {
-			throw new Exception("解码出错");
-		}
-		return newBuf;
+		System.out.println("TcpFrameDecoder.decode()");
+		return (ByteBuf) super.decode(ctx, buf);
 	}
 
 }
