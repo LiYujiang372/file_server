@@ -31,7 +31,7 @@ public class OauthHandler extends ChannelInboundHandlerAdapter {
 	
 	@Autowired
 	private FileDataHandler fileDataHandler;
-
+	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		System.out.println("OauthHandler.channelRead()");
@@ -57,7 +57,7 @@ public class OauthHandler extends ChannelInboundHandlerAdapter {
 						if (future.isSuccess()) {
 							logger.info("鉴权消息报回复成功");
 							/*
-							 * 回复成功后再来更新handler
+							 * 动态更新handler,切换协议
 							 */
 							ctx.pipeline().remove(OauthHandler.class);
 							ctx.pipeline().addLast(processHandler);
@@ -65,7 +65,7 @@ public class OauthHandler extends ChannelInboundHandlerAdapter {
 							ctx.pipeline().addLast(fileFrameDecoder);
 							ctx.pipeline().addLast(fileDataHandler);
 						}else {
-							logger.info("鉴权消息包回复失败");
+							logger.error("异常信息:[{}]", future.cause().getMessage(), future.cause());
 						}
 					}
 				});
@@ -132,7 +132,7 @@ public class OauthHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		System.out.println("OauthHandler.exceptionCaught()");
-		super.exceptionCaught(ctx, cause);
+		logger.error("异常信息:{}", cause.getMessage(), cause);
 	}
 
 }

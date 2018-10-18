@@ -20,6 +20,7 @@ public class FileMetaHandler {
 	@Autowired
 	private FileStorageRepository repository;
 	
+	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(FileMetaHandler.class);
 
 
@@ -30,15 +31,12 @@ public class FileMetaHandler {
 	public void initFile(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 		System.out.println("FileMetaHandler.channelRead()");
 		
-		boolean b = false; //数据是否正确解析
-		
 		long fileId = buf.readLong();//文件id
 		byte type = buf.readByte();//文件类型
 		int fileSize = buf.readInt();//文件总大小
 		byte[] md5Bytes = new byte[16];
 		buf.readBytes(md5Bytes);//文件校验码
 		int nameLength = buf.readInt();//文件名长度
-		
 		//长度校验后读取文件名
 		int restLength = buf.readableBytes();
 		if (restLength != nameLength) {
@@ -46,33 +44,32 @@ public class FileMetaHandler {
 		}
 		byte[] nameBytes = new byte[nameLength];
 		buf.readBytes(nameBytes);
+		String fileName = new String(nameBytes, CharsetUtil.UTF_8);	//文件名,字符编码utf-8
 		
-		String fileName = new String(nameBytes, CharsetUtil.UTF_8);	//文件名
+		FileStorage info = FileInfoCach.infoMap.get(fileId);
 		
-		
-		repository.findByFileId(fileId);
-		
-		//文件信息写入数据库,加入缓存
-		FileStorage info = new FileStorage();
-		info.setProject_id(1);
-		info.setTask_id(2);
-		info.setFile_type(type);
-		info.setFile_id(fileId);
-		info.setFile_size(fileSize);
-		info.setFile_name(fileName);
-		info = repository.save(info);
-		
-		if (info != null) {
-			
+		/*
+		 * 区分两种情况,新文件和旧文件断点续传
+		 */
+		if (info == null) {
+			//初始化存入数据库
+			info = new FileStorage();
+			info.setProject_id(1);
+			info.setTask_id(2);
+			info.setFile_type(type);
+			info.setFile_id(fileId);
+			info.setFile_size(fileSize);
+			info.setFile_name(fileName);
+			info = repository.save(info);
 			//初始化后加入缓存
 			info.setOldMD5(md5Bytes);
 			info.init();
 			FileInfoCach.infoMap.put(fileId, info);
-			logger.info("存入数据库info的id:{}", info.getId());
-			
-			//回复客户端
-			ctx.write(info);
 		}
+		
+		//回复客户端
+		ctx.write(info);
+		
 		ReferenceCountUtil.release(buf);
 	}
 

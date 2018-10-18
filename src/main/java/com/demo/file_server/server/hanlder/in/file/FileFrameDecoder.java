@@ -35,10 +35,8 @@ public class FileFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
 		logger.info("文件唯一id:{}", id);
 		
 		int dataLength = buf.readInt();
-		logger.info("数据区长度:{}", dataLength);
 		int restLength = buf.readableBytes();
 		if (dataLength != restLength) {
-			logger.error("数据解析出错");
 			return;
 		}
 		
