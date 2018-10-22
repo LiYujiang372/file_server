@@ -5,6 +5,7 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.demo.file_server.context.AppConfigs;
@@ -41,7 +42,8 @@ public class TcpServer {
 	/**
 	 * 服务器绑定的端口号
 	 */
-	private final static int SERVER_PORT = 2345;
+	@Value(value = "${server.port}")
+	private int SERVER_PORT = 12345;
 	
 	/**
 	 * 初始化服务器

@@ -1,11 +1,9 @@
 package com.demo.file_server.dao.entity;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -27,6 +25,7 @@ import javax.persistence.Transient;
 @Table(name = "file_storage")
 public class FileStorage {
 	
+	private static final String FILE_PATH = "/mnt/mycephfs/%s/%s/%s";
 	/**数据库映射字段**/
 	
 	//主键
@@ -92,8 +91,22 @@ public class FileStorage {
 	public void init() {
 		try {
 			//建立传输流
-			Path path = Paths.get("E:/file_server/" + file_name);
-			this.os = Files.newOutputStream(path, StandardOpenOption.CREATE);
+			String pathStr = String.format(FILE_PATH, project_id, task_id, file_name);
+			File file = new File(pathStr);
+			if (!file.exists()) {
+				file.getParentFile().mkdirs();
+				file.createNewFile();
+			}
+			FileOutputStream fos = new FileOutputStream(file);
+			this.os = fos;
+			
+//			Path path = Paths.get(pathStr);
+//			boolean b = path.toFile().exists();
+//			if (!b) {
+//				
+//			}
+//			this.os = Files.newOutputStream(path, StandardOpenOption.CREATE);
+			
 			//初始化Md5校验器
 			md5 = MessageDigest.getInstance("md5");
 		} catch (Exception e) {
