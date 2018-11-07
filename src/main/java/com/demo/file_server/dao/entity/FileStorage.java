@@ -1,9 +1,5 @@
 package com.demo.file_server.dao.entity;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -15,6 +11,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.exceptions.RadosException;
+import com.ceph.rados.jna.RadosObjectInfo;
+import com.demo.file_server.context.AppBeans;
+
+
 
 /**
  * 文件数据帧
@@ -22,12 +24,10 @@ import javax.persistence.Transient;
  *
  */
 @Entity
-@Table(name = "file_storage")
+@Table(name = "wotianyu_file_storage")
 public class FileStorage {
 	
-	private static final String FILE_PATH = "/mnt/mycephfs/%s/%s/%s";
 	/**数据库映射字段**/
-	
 	//主键
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,7 +54,7 @@ public class FileStorage {
 	//已经存储的文件大小
 	private int save_size = 0;
 	
-	//文件状态  0:存储未完成   1:文件校验失败  2:文件校验成功
+	//文件状态  0:存储未完成   1:文件校验失败 | 文件存储失败   2:文件存储成功,校验成功
 	private int finish = 0;
 	
 	//保存类型,这里全部是用户上传
@@ -69,7 +69,7 @@ public class FileStorage {
 	
 	//文件对应的输出流
 	@Transient
-	private OutputStream os;
+	private IoCTX io = AppBeans.getIO();
 	
 	//MD5校验码
 	@Transient
@@ -89,27 +89,10 @@ public class FileStorage {
 	 * 创建MD5校验器
 	 */
 	public void init() {
+		//初始化Md5校验器
 		try {
-			//建立传输流
-			String pathStr = String.format(FILE_PATH, project_id, task_id, file_name);
-			File file = new File(pathStr);
-			if (!file.exists()) {
-				file.getParentFile().mkdirs();
-				file.createNewFile();
-			}
-			FileOutputStream fos = new FileOutputStream(file);
-			this.os = fos;
-			
-//			Path path = Paths.get(pathStr);
-//			boolean b = path.toFile().exists();
-//			if (!b) {
-//				
-//			}
-//			this.os = Files.newOutputStream(path, StandardOpenOption.CREATE);
-			
-			//初始化Md5校验器
 			md5 = MessageDigest.getInstance("md5");
-		} catch (Exception e) {
+		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 	}
@@ -119,9 +102,9 @@ public class FileStorage {
 	 */
 	public void wirteBytes() {
 		try {
-			os.write(frameBytes);
-			setSaveSize(frameBytes.length + getSave_size());
-		} catch (IOException e) {
+			io.write(file_id + "", frameBytes, this.save_size);
+			setSaveSize(frameBytes.length + this.save_size);
+		} catch (RadosException | IllegalArgumentException e) {
 			e.printStackTrace();
 		}
 	}
@@ -129,8 +112,9 @@ public class FileStorage {
 	/**
 	 * 数据存储成功后调用
 	 * 更新已经存储大小的同时更新进度和状态
+	 * @throws RadosException 
 	 */
-	public void setSaveSize(int saveSize) {
+	public void setSaveSize(int saveSize) throws RadosException {
 		//更新saveSize
 		this.save_size = saveSize;
 		
@@ -143,12 +127,14 @@ public class FileStorage {
 		 * 2.对应的关闭流
 		 */
 		if (saveSize == file_size) {
-			
-			//MD5校验
-			finish = checkMD5() ? 2 : 1;
-			
-			//关闭流
-			close();
+			//文件存储完整性校验
+			RadosObjectInfo objectInfo = io.stat(file_id + "");
+			if (objectInfo.getSize() == file_size) {
+				//MD5校验
+				finish = checkMD5() ? 2 : 1;
+			}else {
+				finish = 1;
+			}
 		}
 	}
 	
@@ -168,12 +154,12 @@ public class FileStorage {
 		this.frameBytes = frameBytes;
 	}
 
-	public OutputStream getOs() {
-		return os;
+	public IoCTX getIo() {
+		return io;
 	}
 
-	public void setOs(OutputStream os) {
-		this.os = os;
+	public void setIo(IoCTX io) {
+		this.io = io;
 	}
 
 	public byte[] getOldMD5() {
@@ -285,14 +271,6 @@ public class FileStorage {
 	 */
 	private void updateMD5() {
 		md5.update(frameBytes);
-	}
-	
-	private void close() {
-		try {
-			os.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	/**

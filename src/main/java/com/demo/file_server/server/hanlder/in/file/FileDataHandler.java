@@ -22,7 +22,7 @@ public class FileDataHandler extends ChannelInboundHandlerAdapter {
 	
 	@Autowired
 	private FileStorageRepository repository;
-
+	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		System.out.println("FileDataHandler.channelRead()");

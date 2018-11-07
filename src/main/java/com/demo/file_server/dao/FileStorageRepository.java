@@ -12,14 +12,14 @@ import com.demo.file_server.dao.entity.FileStorage;
 @Repository
 public interface FileStorageRepository extends JpaRepository<FileStorage, Long> {
 	
-	@Query(value = "UPDATE file_storage" + 
+	@Query(value = "UPDATE wotianyu_file_storage" + 
 			" SET save_size = ?2, finish = ?3" + 
 			" WHERE id = ?1", nativeQuery = true)
 	@Modifying
 	@Transactional
 	int update(long id, int save_size, int finish);
 	
-	@Query(value = "SELECT * FROM file_storage WHERE file_id = ?1", nativeQuery = true)
+	@Query(value = "SELECT * FROM wotianyu_file_storage WHERE file_id = ?1", nativeQuery = true)
 	FileStorage findByFileId(long fileId);
 
 }
