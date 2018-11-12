@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.demo.file_server.context.AppBeans;
-import com.demo.file_server.server.handler.out.ProcessHandler;
 import com.demo.file_server.server.hanlder.in.file.FileDataHandler;
 import com.demo.file_server.server.hanlder.in.file.FileFrameDecoder;
 
@@ -22,9 +21,6 @@ import io.netty.channel.ChannelHandlerContext;
 public class OauthHandler extends ChannelInboundHandlerAdapter {
 	
 	private static Logger logger = LoggerFactory.getLogger(OauthHandler.class);
-	
-	@Autowired
-	private ProcessHandler processHandler;
 	
 	@Autowired
 	private FileFrameDecoder fileFrameDecoder;
@@ -60,7 +56,6 @@ public class OauthHandler extends ChannelInboundHandlerAdapter {
 							 * 动态更新handler,切换协议
 							 */
 							ctx.pipeline().remove(OauthHandler.class);
-							ctx.pipeline().addLast(processHandler);
 							ctx.pipeline().addLast(AppBeans.tcpFrameDecoder());
 							ctx.pipeline().addLast(fileFrameDecoder);
 							ctx.pipeline().addLast(fileDataHandler);

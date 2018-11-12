@@ -31,8 +31,8 @@ public class FileFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
 		logger.info("数据包类型:{}", head);
 		
 		//文件唯一id
-		long id = buf.readLong();
-		logger.info("文件唯一id:{}", id);
+		int id = buf.readInt();
+		logger.info("文件id:{}", id);
 		
 		int dataLength = buf.readInt();
 		int restLength = buf.readableBytes();
@@ -46,15 +46,15 @@ public class FileFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
 		
 		/*
 		 *数据区解析根据包类型来定 
-		 *0x12 表示文件数据
 		 *0x22 表示文件元数据
+		 *0x32 表示文件二进制数据
 		 */
 		if (head == 0x22) {
 			//如果是文件元数据,交给下一个handler处理
 			ByteBuf metaBuf = ctx.alloc().buffer();
 			metaBuf.writeBytes(bytes);
 			fileMetaHandler.initFile(ctx, metaBuf);
-		}else if (head == 0x12) {
+		}else if (head == 0x32) {
 			FileStorage info = FileInfoCach.infoMap.get(id);
 			if (info != null) {
 				//更新帧字节内容

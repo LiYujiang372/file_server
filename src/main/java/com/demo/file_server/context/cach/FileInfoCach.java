@@ -10,6 +10,6 @@ import com.demo.file_server.dao.entity.FileStorage;
 @Component
 public class FileInfoCach {
 	
-	public static Map<Long, FileStorage> infoMap = new ConcurrentHashMap<>();
+	public static Map<Integer, FileStorage> infoMap = new ConcurrentHashMap<>();
 	
 }

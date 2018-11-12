@@ -1,5 +1,7 @@
 package com.demo.file_server.server.hanlder.in.file;
 
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.demo.file_server.context.cach.FileInfoCach;
 import com.demo.file_server.dao.FileStorageRepository;
 import com.demo.file_server.dao.entity.FileStorage;
+import com.demo.file_server.server.handler.out.FileIdHandler;
 
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
@@ -20,6 +23,9 @@ public class FileMetaHandler {
 	@Autowired
 	private FileStorageRepository repository;
 	
+	@Autowired
+	private FileIdHandler fileIdHandler;
+	
 	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(FileMetaHandler.class);
 
@@ -31,7 +37,8 @@ public class FileMetaHandler {
 	public void initFile(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 		System.out.println("FileMetaHandler.channelRead()");
 		
-		long fileId = buf.readLong();//文件id
+		int localId = buf.readInt();//文件id(客户端文件本地id)
+		long createTime = buf.readLong();//文件创建时间
 		byte type = buf.readByte();//文件类型
 		int fileSize = buf.readInt();//文件总大小
 		byte[] md5Bytes = new byte[16];
@@ -46,29 +53,22 @@ public class FileMetaHandler {
 		buf.readBytes(nameBytes);
 		String fileName = new String(nameBytes, CharsetUtil.UTF_8);	//文件名,字符编码utf-8
 		
-		FileStorage info = FileInfoCach.infoMap.get(fileId);
-		
-		/*
-		 * 区分两种情况,新文件和旧文件断点续传
-		 */
-		if (info == null) {
-			//初始化存入数据库
-			info = new FileStorage();
-			info.setProject_id(1);
-			info.setTask_id(2);
-			info.setFile_type(type);
-			info.setFile_id(fileId);
-			info.setFile_size(fileSize);
-			info.setFile_name(fileName);
-			info = repository.save(info);
-			//初始化后加入缓存
-			info.setOldMD5(md5Bytes);
-			info.init();
-			FileInfoCach.infoMap.put(fileId, info);
-		}
+		FileStorage info = new FileStorage();
+		info.setProject_id(1);
+		info.setTask_id(2);
+		info.setLocalId(localId);
+		info.setCreate_date(new Date(createTime));
+		info.setFile_type(type);
+		info.setFile_size(fileSize);
+		info.setFile_name(fileName);
+		info = repository.save(info);
+		//初始化后加入缓存
+		info.setOldMD5(md5Bytes);
+		info.init();
+		FileInfoCach.infoMap.put(info.getId(), info);
 		
 		//回复客户端
-		ctx.write(info);
+		fileIdHandler.write(ctx, info);
 		
 		ReferenceCountUtil.release(buf);
 	}

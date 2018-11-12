@@ -3,6 +3,7 @@ package com.demo.file_server.dao.entity;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Date;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -31,16 +32,16 @@ public class FileStorage {
 	//主键
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
+	private int id;
 	
 	//项目id
-	private long project_id;
+	private int project_id;
 	
 	//任务id
-	private long task_id;
+	private int task_id;
 	
-	//文件id
-	private long file_id;
+	//文件创建时间
+	private Date create_date;
 	
 	//文件名
 	private String file_name;
@@ -60,8 +61,18 @@ public class FileStorage {
 	//保存类型,这里全部是用户上传
 	private int save_type = 1;
 	
+	//文件访问路劲
+	private String file_path;
+	
+	//图片缩略图访问路径
+	private String small_path;
+	
 	
 	/**自定义业务逻辑字段**/
+	
+	//文件本地id
+	@Transient
+	private int localId;
 	
 	//临时文件内容
 	@Transient
@@ -102,7 +113,7 @@ public class FileStorage {
 	 */
 	public void wirteBytes() {
 		try {
-			io.write(file_id + "", frameBytes, this.save_size);
+			io.write(id + "", frameBytes, this.save_size);
 			setSaveSize(frameBytes.length + this.save_size);
 		} catch (RadosException | IllegalArgumentException e) {
 			e.printStackTrace();
@@ -128,7 +139,7 @@ public class FileStorage {
 		 */
 		if (saveSize == file_size) {
 			//文件存储完整性校验
-			RadosObjectInfo objectInfo = io.stat(file_id + "");
+			RadosObjectInfo objectInfo = io.stat(id + "");
 			if (objectInfo.getSize() == file_size) {
 				//MD5校验
 				finish = checkMD5() ? 2 : 1;
@@ -138,14 +149,6 @@ public class FileStorage {
 		}
 	}
 	
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
 	public byte[] getFrameBytes() {
 		return frameBytes;
 	}
@@ -178,14 +181,6 @@ public class FileStorage {
 		this.newMD5 = newMD5;
 	}
 	
-	public long getFile_id() {
-		return file_id;
-	}
-
-	public void setFile_id(long file_id) {
-		this.file_id = file_id;
-	}
-
 	public String getFile_name() {
 		return file_name;
 	}
@@ -242,20 +237,60 @@ public class FileStorage {
 		this.md5 = md5;
 	}
 	
-	public long getProject_id() {
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public int getProject_id() {
 		return project_id;
 	}
 
-	public void setProject_id(long project_id) {
+	public void setProject_id(int project_id) {
 		this.project_id = project_id;
 	}
 
-	public long getTask_id() {
+	public int getTask_id() {
 		return task_id;
 	}
 
-	public void setTask_id(long task_id) {
+	public void setTask_id(int task_id) {
 		this.task_id = task_id;
+	}
+
+	public Date getCreate_date() {
+		return create_date;
+	}
+
+	public void setCreate_date(Date create_date) {
+		this.create_date = create_date;
+	}
+
+	public int getLocalId() {
+		return localId;
+	}
+
+	public void setLocalId(int localId) {
+		this.localId = localId;
+	}
+	
+	public String getFile_path() {
+		return file_path;
+	}
+
+	public void setFile_path(String file_path) {
+		this.file_path = file_path;
+	}
+
+	public String getSmall_path() {
+		return small_path;
+	}
+
+	public void setSmall_path(String small_path) {
+		this.small_path = small_path;
 	}
 
 	/**
@@ -272,44 +307,13 @@ public class FileStorage {
 	private void updateMD5() {
 		md5.update(frameBytes);
 	}
-	
-	/**
-	 * 测试
-	 * @throws NoSuchAlgorithmException 
-	 */
-	public static void main(String[] args) throws NoSuchAlgorithmException {
-		MessageDigest md5 = MessageDigest.getInstance("MD5");
-		String str1 = "dfdsfdsfsdf";
-		String str2 = "9diojf34e329";
-		String str = str1 + str2;
-		
-		md5.update(str.getBytes());
-		byte[] bytes1 = md5.digest();
-		for (byte b : bytes1) {
-			System.err.print(b);
-		}
-		System.err.println("\n------------------");
-		md5.reset();
-		md5.update(str1.getBytes());
-		byte[] bytes2 = md5.digest();
-		for (byte b : bytes2) {
-			System.err.print(b);
-		}
-		System.err.println("\n------------------");
-		md5.update(str2.getBytes());
-		byte[] bytes3 = md5.digest();
-		for (byte b : bytes3) {
-			System.err.print(b);
-		}
-		
-		System.err.println("\n" + (Arrays.equals(bytes1, bytes3) ? "true" : "false"));
-	}
 
 	@Override
 	public String toString() {
-		return "FileStorage [id=" + id + ", project_id=" + project_id + ", task_id=" + task_id + ", file_id=" + file_id
-				+ ", file_name=" + file_name + ", file_type=" + file_type + ", file_size=" + file_size + ", save_size="
-				+ save_size + ", finish=" + finish + ", save_type=" + save_type + "]";
+		return "FileStorage [id=" + id + ", project_id=" + project_id + ", task_id=" + task_id + ", create_date="
+				+ create_date + ", file_name=" + file_name + ", file_type=" + file_type + ", file_size=" + file_size
+				+ ", save_size=" + save_size + ", finish=" + finish + ", save_type=" + save_type + ", localId="
+				+ localId + "]";
 	}
 	
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import com.demo.file_server.dao.FileStorageRepository;
 import com.demo.file_server.dao.entity.FileStorage;
+import com.demo.file_server.server.handler.out.ProcessHandler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -23,6 +24,9 @@ public class FileDataHandler extends ChannelInboundHandlerAdapter {
 	@Autowired
 	private FileStorageRepository repository;
 	
+	@Autowired
+	private ProcessHandler processHandler;
+	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		System.out.println("FileDataHandler.channelRead()");
@@ -37,7 +41,7 @@ public class FileDataHandler extends ChannelInboundHandlerAdapter {
 			repository.update(info.getId(), info.getSave_size(), info.getFinish());
 		}
 		
-		ctx.write(info);
+		processHandler.write(ctx, info);
 	}
 
 	@Override
